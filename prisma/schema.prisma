@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id        String   @id @default(uuid())
+  name      String
+  states    State[]
+  flag      Photo?   @relation(fields: [photoId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photoId   String?
+  isActive  Boolean  @default(true)
+}
+
+model State {
+  id        String   @id @default(uuid())
+  name      String
+  country   Country  @relation(fields: [countryId], references: [id])
+  countryId String
+  cities    City[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+}
+
+model City {
+  id        String     @id @default(uuid())
+  name      String
+  states    State      @relation(fields: [stateId], references: [id])
+  location  Location[]
+  stateId   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  isActive  Boolean    @default(true)
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  latitude  Float
+  longitude Float
+  city      City     @relation(fields: [cityId], references: [id])
+  cityId    String
+  estate    Estate   @relation(fields: [estateId], references: [id])
+  estateId  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+}
+
+model Prop {
+  id         String       @id @default(uuid())
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  name       String       @unique
+  icon       Photo?       @relation(fields: [photoId], references: [id])
+  estateProp EstateProp[]
+  photoId    String?
+  isActive   Boolean      @default(true)
+}
+
+model Currency {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  symbol    String
+  estate    Estate[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+}
+
+model ContractType {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String   @unique
+  estate    Estate[]
+  isActive  Boolean  @default(true)
+}
+
+model Estate {
+  id             String        @id @default(uuid())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  location       Location?
+  isForRent      Boolean
+  estateProps    EstateProp[]
+  contractType   ContractType  @relation(fields: [contractTypeId], references: [id])
+  price          Float
+  currency       Currency      @relation(fields: [currencyId], references: [id])
+  currencyId     String
+  contractTypeId String
+  photos         EstatePhoto[]
+  publisher      User          @relation(fields: [userId], references: [id])
+  userId         String
+  isActive       Boolean       @default(true)
+}
+
+model EstateProp {
+  estate    Estate   @relation(fields: [estateId], references: [id])
+  prop      Prop     @relation(fields: [propId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  estateId  String
+  propId    String
+  isActive  Boolean  @default(true)
+
+  @@id([estateId, propId])
+}
+
+model Photo {
+  id         String        @id @default(uuid())
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  isActive   Boolean       @default(true)
+  url        String        @unique
+  detailsUrl String        @unique
+  fileName   String
+  estates    EstatePhoto[]
+  props      Prop[]
+  countries  Country[]
+  users      User[]
+}
+
+model EstatePhoto {
+  photo     Photo    @relation(fields: [photoId], references: [id])
+  estate    Estate   @relation(fields: [estateId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  photoId   String
+  estateId  String
+  isActive  Boolean  @default(true)
+
+  @@id([estateId, photoId])
+}
+
+model User {
+  id               String   @id @default(uuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  name             String
+  lastName         String
+  email            String   @unique
+  password         String
+  profilePicture   Photo?   @relation(fields: [photoId], references: [id])
+  estatesPublished Estate[]
+  photoId          String?
+  isActive         Boolean  @default(true)
+}
