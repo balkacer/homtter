@@ -1,145 +1,106 @@
-import { Response } from "~/models";
+import { Credentials } from "~/models";
 import { NewUser } from "~/models/User";
-import { changeUserLoginStatusByEmail, checkUserIsLogged, createUser, getUserByCredentials } from "~/repositories/user";
-import { getFromStorage, setInStorage } from "./storage";
+import { createUser, getUserByCredentials } from "~/repositories/user";
+import { getSession, commitSession, destroySession } from "../sessions";
+import { json, redirect, TypedResponse } from "@remix-run/node";
+
 
 const AuthService = (function () {
-  const signIn = async function (email: string, password: string): Promise<Response<Boolean>> {
+  const checkIfUserIsLogged = async function (cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+    const session = await getSession(cookieHeader);
 
-    // TODO: Validations for email
+    if (session.has("sessionUserData")) {
+      return redirect("/");
+    }
 
+    const data = { error: session.get("error") };
+
+    return json(data, {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  }
+
+  const signIn = async function (credentials: Credentials, cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+    const session = await getSession(cookieHeader);
     try {
-      const response = await checkUserIsLogged(email);
-      const { success: isLoggedSuccess, data: isLogged } = response;
+      const { email, password } = credentials;
 
-      if (!isLoggedSuccess) {
-        return response;
-      }
-
-      if (isLogged) {
-        return {
-          message: "User is currently logged",
-          data: false,
-          success: false,
-          messageType: "WARNING"
-        }
-      }
+      // TODO: Validations for email
 
       const { success: credentialsSuccess, data: user } = await getUserByCredentials({ email, password });
 
       if (!credentialsSuccess) {
-        return {
-          message: "Wrong credentials!",
-          data: false,
-          success: false,
-          messageType: "WARNING"
-        }
+        session.flash("error", "Credentials wrong!");
+
+        return redirect("/sign-in", {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        });
       }
 
-      const loginStatusResponse = user?.email ? await changeUserLoginStatusByEmail(user?.email) : undefined;
+      session.set("sessionUserData", user);
 
-      if (!loginStatusResponse?.success) {
-        throw (null)
-      }
-
-      setInStorage("sessionData", user)
-
-      return {
-        message: "User logged correctly!",
-        data: true,
-        success: true,
-        messageType: "INFO"
-      }
+      return redirect("/", {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      });
     } catch {
-      return {
-        message: "Something went wrong, try again.",
-        data: false,
-        success: false,
-        messageType: "DANGER"
-      }
+      session.flash("error", "Something went wrong!");
+
+      return redirect("/sign-in", {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      });
     }
   }
 
-  const signOut = async function (): Promise<Response<Boolean>> {
-    try {
-      const email = getFromStorage<string>("sessionData", "email");
+  const signOut = async function (cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+    const session = await getSession(cookieHeader);
 
-      if (!email) {
-        throw (null)
-      }
-
-      const response = await checkUserIsLogged(email);
-      const { success: isLoggedSuccess, data: isLogged } = response;
-
-      if (!isLoggedSuccess) {
-        return response;
-      }
-
-      if (!isLogged) {
-        return {
-          message: "User didn't logged in",
-          data: false,
-          success: false,
-          messageType: "WARNING"
-        }
-      }
-
-      const loginStatusResponse = await changeUserLoginStatusByEmail(email);
-
-      if (!loginStatusResponse.success) {
-        return loginStatusResponse;
-      }
-
-      setInStorage("sessionData", null)
-
-      return {
-        message: "User logged out correctly!",
-        data: true,
-        success: true,
-        messageType: "SUCCESS"
-      }
-    } catch {
-      return {
-        message: "Something went wrong, try again.",
-        data: false,
-        success: false,
-        messageType: "DANGER"
-      }
-    }
-
+    return redirect("/login", {
+      headers: {
+        "Set-Cookie": await destroySession(session),
+      },
+    });
   }
 
-  const signUp = async function (userData: NewUser): Promise<Response<Boolean>> {
-
-    // TODO: Validations for name, lastName, email, password and profilePicture
+  const signUp = async function (userData: NewUser, cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+    const session = await getSession(cookieHeader);
 
     try {
+      // TODO: Validations for name, lastName, email, password and profilePicture
       const { success: createUserResponse, data: user } = await createUser(userData)
 
       if (!createUserResponse) {
-        return {
-          message: "User not registered!",
-          data: false,
-          success: false,
-          messageType: "DANGER"
-        }
+        session.flash("error", "Something went wrong!");
+
+        return redirect("/sign-up", {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        });
       }
 
-      setInStorage("sessionData", user)
+      session.set("sessionUserData", user);
 
-      return {
-        message: "User registered correctly!",
-        data: true,
-        success: true,
-        messageType: "INFO"
-      }
+      return redirect("/", {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      });
     } catch {
-      return {
-        message: "Something went wrong, try again.",
-        data: false,
-        success: false,
-        messageType: "DANGER"
-      }
+      session.flash("error", "Something went wrong!");
+
+      return redirect("/sign-up", {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      });
     }
   }
 })();
