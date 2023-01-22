@@ -1,4 +1,5 @@
 node_modules
+.vscode
 
 .cache
 .env
@@ -9,3 +10,5 @@ node_modules
 /public/build
 /api/index.js
 /api/index.js.map
+
+/prisma/dev.db
