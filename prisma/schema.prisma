@@ -150,6 +150,7 @@ model User {
   lastName         String
   email            String   @unique
   password         String
+  isLogged         Boolean  @default(true)
   profilePicture   Photo?   @relation(fields: [photoId], references: [id])
   estatesPublished Estate[]
   photoId          String?
