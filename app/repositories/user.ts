@@ -18,7 +18,6 @@ export async function createUser(userData: NewUser): Promise<Response<UserClient
     ...userData,
     createdAt: now,
     isActive: true,
-    isLogged: true,
     updatedAt: now,
     id: "" + (USERS.length + 1),
     photoId: photoResponse.data?.id || null
@@ -48,60 +47,6 @@ export async function createUser(userData: NewUser): Promise<Response<UserClient
 
 export async function getUserById() {
 
-}
-
-export async function checkUserIsLogged(userId: string): Promise<Response<Boolean>> {
-  const user = await asyncExecute(() => USERS.find(({ id, isActive }) => id === userId && isActive), 1000);
-
-  if (!user) {
-    return {
-      message: "User doesn't exist",
-      success: false,
-      messageType: "WARNING",
-      data: null
-    }
-  }
-
-  return {
-    message: "All good!",
-    success: true,
-    messageType: "INFO",
-    data: user.isLogged
-  }
-}
-
-export async function changeUserLoginStatusByEmail(email: string): Promise<Response<Boolean>> {
-  const user = await asyncExecute(() => USERS.find(({ email: email_, isActive }) => email_ === email && isActive), 1000);
-
-  if (!user) {
-    return {
-      message: "User doesn't exist",
-      success: false,
-      messageType: "WARNING",
-      data: null
-    }
-  }
-
-  const updatedUser = { ...user, isLogged: !user.isLogged };
-
-  try {
-    const index = await asyncExecute(() => USERS.findIndex(({ id }) => id === updatedUser.id), 1000);
-    USERS[index] = updatedUser;
-
-    return {
-      message: "Done! user " + updatedUser.isLogged ? "logged correctly." : "is loggout",
-      success: true,
-      messageType: "SUCCESS",
-      data: updatedUser.isLogged
-    }
-  } catch {
-    return {
-      message: "Something went wrong, try again.",
-      success: false,
-      messageType: "DANGER",
-      data: null
-    }
-  }
 }
 
 export async function getUserByCredentials(credentials: Credentials): Promise<Response<UserClient>> {

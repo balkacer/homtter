@@ -211,7 +211,6 @@ function getUsers(photos: string[]): Omit<User, "id" | "createdAt" | "updatedAt"
       email: "j.perez@gmail.com",
       password: "1234",
       photoId: photos[0],
-      isLogged: false
     },
     {
       name: "Ana",
@@ -219,7 +218,6 @@ function getUsers(photos: string[]): Omit<User, "id" | "createdAt" | "updatedAt"
       email: "a.cuevas@gmail.com",
       password: "1234",
       photoId: photos[1],
-      isLogged: false
     }
   ];
 }

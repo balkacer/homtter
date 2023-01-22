@@ -9,7 +9,6 @@ const USERS: Omit<User, "createdAt" | "updatedAt">[] = [
     password: "1234",
     photoId: "1",
     isActive: true,
-    isLogged: false
   },
   {
     name: "Jose",
@@ -19,7 +18,6 @@ const USERS: Omit<User, "createdAt" | "updatedAt">[] = [
     password: "1234",
     photoId: "2",
     isActive: true,
-    isLogged: false
   }
 ]
 
