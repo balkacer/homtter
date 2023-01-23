@@ -1,6 +1,6 @@
 import { User } from "@prisma/client";
 
-const USERS: Omit<User, "createdAt" | "updatedAt">[] = [
+const USERS: User[] = [
   {
     name: "Ana",
     lastName: "Cuevas",
@@ -9,6 +9,8 @@ const USERS: Omit<User, "createdAt" | "updatedAt">[] = [
     password: "1234",
     photoId: "9615a8fa-cc56-4878-b7e1-0de42da56515",
     isActive: true,
+    createdAt: new Date(2023, 0, 1),
+    updatedAt: new Date(2023, 0, 20)
   },
   {
     name: "Jose",
@@ -18,6 +20,8 @@ const USERS: Omit<User, "createdAt" | "updatedAt">[] = [
     password: "1234",
     photoId: "abd5a1e3-f5f3-4750-a3c8-7c5d7616d5bf",
     isActive: true,
+    createdAt: new Date(2022, 8, 8),
+    updatedAt: new Date(2023, 0, 12)
   }
 ]
 
