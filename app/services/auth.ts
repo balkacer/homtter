@@ -4,52 +4,39 @@ import { createUser, getUserByCredentials } from "~/repositories/user";
 import { getSession, commitSession, destroySession } from "../sessions";
 import { json, redirect, TypedResponse } from "@remix-run/node";
 
+const checkIfUserIsLogged = async function (cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+  const session = await getSession(cookieHeader);
+  console.log(session.get("sessionUserData"));
 
-const AuthService = (function () {
-  const checkIfUserIsLogged = async function (cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
-    const session = await getSession(cookieHeader);
-
-    if (session.has("sessionUserData")) {
-      return redirect("/");
-    }
-
-    const data = { error: session.get("error") };
-
-    return json(data, {
-      headers: {
-        "Set-Cookie": await commitSession(session),
-      },
-    });
+  if (session.has("sessionUserData")) {
+    return redirect("/");
   }
 
-  const signIn = async function (credentials: Credentials, cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
-    const session = await getSession(cookieHeader);
-    try {
-      const { email, password } = credentials;
+  const data = { error: session.get("error") };
 
-      // TODO: Validations for email
+  return json(data, {
+    headers: {
+      "Set-Cookie": await commitSession(session),
+    },
+  });
+}
 
-      const { success: credentialsSuccess, data: user } = await getUserByCredentials({ email, password });
+const signIn = async function (credentials: Credentials, cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+  const session = await getSession(cookieHeader);
+  console.log(session.get("sessionUserData"));
 
-      if (!credentialsSuccess) {
-        session.flash("error", "Credentials wrong!");
+  try {
+    const { email, password } = credentials;
 
-        return redirect("/sign-in", {
-          headers: {
-            "Set-Cookie": await commitSession(session),
-          },
-        });
-      }
+    console.log(credentials);
 
-      session.set("sessionUserData", user);
 
-      return redirect("/", {
-        headers: {
-          "Set-Cookie": await commitSession(session),
-        },
-      });
-    } catch {
-      session.flash("error", "Something went wrong!");
+    // TODO: Validations for email
+
+    const { success: credentialsSuccess, data: user } = await getUserByCredentials({ email, password });
+
+    if (!credentialsSuccess) {
+      session.flash("error", "Credentials wrong!");
 
       return redirect("/sign-in", {
         headers: {
@@ -57,43 +44,43 @@ const AuthService = (function () {
         },
       });
     }
-  }
 
-  const signOut = async function (cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
-    const session = await getSession(cookieHeader);
+    session.set("sessionUserData", user);
 
-    return redirect("/login", {
+    return redirect("/", {
       headers: {
-        "Set-Cookie": await destroySession(session),
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  } catch {
+    session.flash("error", "Something went wrong!");
+
+    return redirect("/sign-in", {
+      headers: {
+        "Set-Cookie": await commitSession(session),
       },
     });
   }
+}
 
-  const signUp = async function (userData: NewUser, cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
-    const session = await getSession(cookieHeader);
+const signOut = async function (cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+  const session = await getSession(cookieHeader);
 
-    try {
-      // TODO: Validations for name, lastName, email, password and profilePicture
-      const { success: createUserResponse, data: user } = await createUser(userData)
+  return redirect("/login", {
+    headers: {
+      "Set-Cookie": await destroySession(session),
+    },
+  });
+}
 
-      if (!createUserResponse) {
-        session.flash("error", "Something went wrong!");
+const signUp = async function (userData: NewUser, cookieHeader?: string | null): Promise<TypedResponse<{ error: any }>> {
+  const session = await getSession(cookieHeader);
 
-        return redirect("/sign-up", {
-          headers: {
-            "Set-Cookie": await commitSession(session),
-          },
-        });
-      }
+  try {
+    // TODO: Validations for name, lastName, email, password and profilePicture
+    const { success: createUserResponse, data: user } = await createUser(userData)
 
-      session.set("sessionUserData", user);
-
-      return redirect("/", {
-        headers: {
-          "Set-Cookie": await commitSession(session),
-        },
-      });
-    } catch {
+    if (!createUserResponse) {
       session.flash("error", "Something went wrong!");
 
       return redirect("/sign-up", {
@@ -102,7 +89,28 @@ const AuthService = (function () {
         },
       });
     }
-  }
-})();
 
-export default AuthService;
+    session.set("sessionUserData", user);
+
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  } catch {
+    session.flash("error", "Something went wrong!");
+
+    return redirect("/sign-up", {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  }
+}
+
+export {
+  checkIfUserIsLogged,
+  signIn,
+  signOut,
+  signUp
+}
