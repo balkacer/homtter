@@ -64,7 +64,9 @@ export async function getUserByCredentials(credentials: Credentials): Promise<Re
   const profilePictureResponse = user.photoId ? await getPhotoUrlById(user.photoId) : undefined
 
   const userForClientView: UserClient = {
-    ...user,
+    name: user.name,
+    lastName: user.lastName,
+    email: user.email,
     profilePicture: profilePictureResponse?.data
   }
 
