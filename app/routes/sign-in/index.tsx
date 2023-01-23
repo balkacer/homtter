@@ -1,24 +1,35 @@
-import { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
 import type { LinksFunction } from "@remix-run/node";
-import { Form } from "@remix-run/react";
-import { checkIfUserIsLogged, signIn } from "~/services/auth";
+import { Form, useLoaderData } from "@remix-run/react";
+import { AuthService, SessionStorageService } from "~/services";
 import stylesUrl from "~/styles/sign-in.css";
 
 export default function SignIn() {
+  const loaderData = useLoaderData();
+
   return (
-    <main>
-      <Form method="post" action="/sign-in">
-        <label>
-          Email: <input type="email" name="email" />
-        </label>
-        <label>
-          Password: <input type="password" name="password" />
-        </label>
-        <button type="submit" className="button">
-          Add
-        </button>
+    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
+      <h1>Welcome to Remix-Auth Example</h1>
+      <p>
+        Based on the Form Strategy From{" "}
+        <a href="https://github.com/sergiodxa/remix-auth" target={"_window"}>
+          Remix-Auth Project
+        </a>
+      </p>
+      <Form method="post">
+        <input type="email" name="email" placeholder="email" required />
+        <input
+          type="password"
+          name="password"
+          placeholder="password"
+          autoComplete="current-password"
+        />
+        <button>Sign In</button>
       </Form>
-    </main>
+      <div>
+        {loaderData?.error ? <p>ERROR: {loaderData?.error?.message}</p> : null}
+      </div>
+    </div>
   );
 }
 
@@ -26,22 +37,28 @@ export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesUrl }];
 };
 
-export async function loader({ request }: LoaderArgs) {
-  return await checkIfUserIsLogged(request.headers.get("Cookies"))
-}
+export const loader: LoaderFunction = async ({ request }) => {
+  await AuthService.isAuthenticated(request, {
+    successRedirect: "/"
+  });
 
-export async function action({ request }: ActionArgs) {
-  const form = await request.formData();
+  const session = await SessionStorageService.getSession(
+    request.headers.get("Cookie")
+  );
 
-  const email = form.get("email");
-  const password = form.get("password");
+  const error = session.get("__clientSession");
+  return json<any>({ error });
+};
 
-  if (
-    typeof email !== "string" ||
-    typeof password !== "string"
-  ) {
-    throw new Error(`Form not submitted correctly.`);
-  }
+export const action: ActionFunction = async ({ request }) => {
+  console.log("hola");
 
-  return await signIn({ email, password }, request.headers.get("Cookies"))
-}
+  const result = await AuthService.authenticate("form", request, {
+    successRedirect: "/",
+    failureRedirect: "/sign-in"
+  });
+
+  console.log(result);
+
+  return result;
+};
