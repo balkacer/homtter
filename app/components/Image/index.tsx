@@ -1,6 +1,6 @@
 type ImageSize = "16" | "24" | "32" | "48" | "64" | "96" | "128";
 
-const Image = (props: { source: string, size: ImageSize, isRounded?: Boolean, }) => {
+const Image = (props: { source: string | undefined, size: ImageSize, isRounded?: Boolean, }) => {
   const { source, size, isRounded } = props;
   return (
     <figure className={`image is-${size}x${size}`}>
