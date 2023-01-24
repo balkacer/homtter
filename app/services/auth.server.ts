@@ -14,41 +14,22 @@ AuthService.use(
   new FormStrategy(async ({ form }) => {
     const email = form.get('email') as string;
     const password = form.get('password') as string;
-
-    console.log({ email, password });
-
-
     const validationScope = "Bad Credentials";
 
-    const emailValidation = validateInput("Email", email, ["isString", "isEmail", "isRequired"], validationScope)
+    const emailValidation = validateInput("Email", email, ["isString", "isRequired"], validationScope)
 
-    if (!emailValidation.isValid) {
-      console.log(emailValidation.message);
-
+    if (!emailValidation.isValid)
       throw new AuthorizationError(emailValidation.message)
-    }
 
     const passwordValidation = validateInput("Password", password, ["isString", "isRequired"], validationScope)
 
-    if (!passwordValidation.isValid) {
-      console.log(passwordValidation.message);
-
+    if (!passwordValidation.isValid)
       throw new AuthorizationError(passwordValidation.message)
-    }
-
-    console.log("hbjbj");
-
 
     const { success: credentialsSuccess, data: user, message } = await getUserByCredentials({ email, password });
 
-    if (!credentialsSuccess) {
-      console.log(message);
-
-      throw new AuthorizationError("Credentials wrong!")
-    }
-
-    console.log("holaaaaa!!");
-
+    if (!credentialsSuccess)
+      throw new AuthorizationError(message);
 
     return user;
   }),
