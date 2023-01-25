@@ -6,100 +6,31 @@ import { Authenticator, AuthorizationError } from "remix-auth";
 import { FormStrategy } from "remix-auth-form";
 import { User } from "~/models";
 
-class AuthService {
-  private sessionStorage: SessionStorage;
-  sessionKey: string;
-  sessionErrorKey: string;
+const AuthService = new Authenticator<User | Error | null>(SessionStorageService);
 
-  constructor() {
-    this.sessionStorage = SessionStorageService;
-    this.sessionKey = "sessionDataClient";
-    this.sessionErrorKey = "sessionDataClient";
-  }
-
-  async authenticate(request: Request) {
-    const session = await this.sessionStorage.getSession(request.headers.get("Cookie"));
-    const form = await request.formData();
-
+AuthService.use(
+  new FormStrategy(async ({ form }) => {
     const email = form.get('email') as string;
     const password = form.get('password') as string;
-
     const validationScope = "Bad Credentials";
 
     const emailValidation = validateInput("Email", email, ["isRequired"], validationScope)
 
-    if (!emailValidation.isValid) {
-      session.flash(this.sessionErrorKey, emailValidation.message);
-
-      return redirect("/sign-in", {
-        headers: {
-          "Set-Cookie": await this.sessionStorage.commitSession(session),
-        },
-      });
-    }
+    if (!emailValidation.isValid)
+      throw new AuthorizationError(emailValidation.message)
 
     const passwordValidation = validateInput("Password", password, ["isRequired"], validationScope)
 
-    if (!passwordValidation.isValid) {
-      session.flash(this.sessionErrorKey, passwordValidation.message);
-
-      return redirect("/sign-in", {
-        headers: {
-          "Set-Cookie": await this.sessionStorage.commitSession(session),
-        },
-      });
-    }
+    if (!passwordValidation.isValid)
+      throw new AuthorizationError(passwordValidation.message)
 
     const { success: credentialsSuccess, data: user, message } = await getUserByCredentials({ email, password });
 
-    if (!credentialsSuccess) {
-      session.flash(this.sessionErrorKey, message);
+    if (!credentialsSuccess)
+      throw new AuthorizationError(message);
 
-      return redirect("/sign-in", {
-        headers: {
-          "Set-Cookie": await this.sessionStorage.commitSession(session),
-        },
-      });
-    }
+    return user;
+  })
+);
 
-    session.set(this.sessionKey, user);
-
-    return redirect("/", {
-      headers: {
-        "Set-Cookie": await this.sessionStorage.commitSession(session),
-      },
-    });
-  }
-
-  async isAuthenticated(request: Request) {
-    const session = await this.sessionStorage.getSession(
-      request.headers.get("Cookie")
-    );
-
-    if (session.has(this.sessionKey)) {
-      return redirect("/");
-    }
-
-    const data = { error: session.get(this.sessionErrorKey) };
-
-    return json(data, {
-      headers: {
-        "Set-Cookie": await this.sessionStorage.commitSession(session),
-      },
-    });
-  }
-
-  async logOut(request: Request) {
-    const session = await this.sessionStorage.getSession(
-      request.headers.get("Cookie")
-    );
-
-    return redirect("/sign-in", {
-      headers: {
-        "Set-Cookie": await this.sessionStorage.destroySession(session),
-      },
-    });
-  }
-}
-
-export default new AuthService();
+export default AuthService;
