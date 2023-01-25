@@ -1,0 +1,1 @@
+export const NAVBAR_LOGO = "https://bulma.io/images/bulma-logo.png";

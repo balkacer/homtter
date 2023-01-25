@@ -1,57 +1,36 @@
-import UserClient from "~/models/User";
 import { getUserByCredentials } from "~/repositories/user";
-import SessionStorageService from "./session.server";
-import { Authenticator, AuthorizationError } from 'remix-auth';
-import { FormStrategy } from 'remix-auth-form';
+import SessionStorageService from "~/sessions";
 import validateInput from "~/utils/validator";
+import { json, redirect, SessionStorage } from "@remix-run/node";
+import { Authenticator, AuthorizationError } from "remix-auth";
+import { FormStrategy } from "remix-auth-form";
+import { User } from "~/models";
 
-const AuthService = new Authenticator<UserClient | Error | null>(SessionStorageService, {
-  sessionKey: "__clientSession",
-  sessionErrorKey: "__clientSessionError",
-});
+const AuthService = new Authenticator<User | Error | null>(SessionStorageService);
 
 AuthService.use(
   new FormStrategy(async ({ form }) => {
     const email = form.get('email') as string;
     const password = form.get('password') as string;
-
-    console.log({ email, password });
-
-
     const validationScope = "Bad Credentials";
 
-    const emailValidation = validateInput("Email", email, ["isString", "isEmail", "isRequired"], validationScope)
+    const emailValidation = validateInput("Email", email, ["isRequired"], validationScope)
 
-    if (!emailValidation.isValid) {
-      console.log(emailValidation.message);
-
+    if (!emailValidation.isValid)
       throw new AuthorizationError(emailValidation.message)
-    }
 
-    const passwordValidation = validateInput("Password", password, ["isString", "isRequired"], validationScope)
+    const passwordValidation = validateInput("Password", password, ["isRequired"], validationScope)
 
-    if (!passwordValidation.isValid) {
-      console.log(passwordValidation.message);
-
+    if (!passwordValidation.isValid)
       throw new AuthorizationError(passwordValidation.message)
-    }
-
-    console.log("hbjbj");
-
 
     const { success: credentialsSuccess, data: user, message } = await getUserByCredentials({ email, password });
 
-    if (!credentialsSuccess) {
-      console.log(message);
-
-      throw new AuthorizationError("Credentials wrong!")
-    }
-
-    console.log("holaaaaa!!");
-
+    if (!credentialsSuccess)
+      throw new AuthorizationError(message);
 
     return user;
-  }),
+  })
 );
 
 export default AuthService;

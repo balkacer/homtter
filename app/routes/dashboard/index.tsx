@@ -1,24 +1,26 @@
-import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
+import { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import AuthService from "~/services/auth.server";
 import Navbar from "~/components/Navbar";
-import sessionStorage from "~/sessions";
+import { User } from "~/models";
 
-export default function Index() {
-  const loggedUser = useLoaderData();
+export default function Dashboard() {
+  const loggedUser = useLoaderData<User | null>();
 
   return (
     <>
       <Navbar loggedUser={loggedUser} />
       <main>
-        <h1>Esta es la página de inicio</h1>
+        <h1>Hola, {loggedUser?.name}</h1>
       </main>
     </>
   );
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  return await AuthService.isAuthenticated(request);
+  return await AuthService.isAuthenticated(request, {
+    failureRedirect: "/sign-in"
+  });
 };
 
 export const action: ActionFunction = async ({ request }) => {

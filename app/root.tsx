@@ -1,4 +1,4 @@
-import type { MetaFunction } from "@remix-run/node";
+import type { LinksFunction, MetaFunction } from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -8,11 +8,17 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 
+const stylesUrl = "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" // Bulma Styles
+
 export const meta: MetaFunction = () => ({
   charset: "utf-8",
-  title: "New Remix App",
+  title: "Bulma",
   viewport: "width=device-width,initial-scale=1",
 });
+
+export const links: LinksFunction = () => {
+  return [{ rel: "stylesheet", href: stylesUrl }];
+};
 
 export default function App() {
   return (
