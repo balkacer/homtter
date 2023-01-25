@@ -1,8 +1,8 @@
-import { ActionFunction, LoaderFunction } from "@remix-run/node";
-import type { LinksFunction } from "@remix-run/node";
+import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
 import AuthService from "~/services/auth.server";
-import { Form, useLoaderData } from "@remix-run/react";
 import Navbar from "~/components/Navbar";
+import sessionStorage from "~/sessions";
 
 export default function Index() {
   const loggedUser = useLoaderData();
@@ -18,11 +18,27 @@ export default function Index() {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  return await AuthService.isAuthenticated(request, {
-    failureRedirect: "/sign-in",
+  await AuthService.isAuthenticated(request);
+
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie")
+  );
+
+  if (session.has(AuthService.sessionKey)) {
+    return json(session.get(AuthService.sessionKey))
+  }
+
+  const data = { error: session.get(AuthService.sessionErrorKey) };
+
+  return json(data, {
+    headers: {
+      "Set-Cookie": await sessionStorage.commitSession(session),
+    },
   });
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  await AuthService.logout(request, { redirectTo: "/sign-in" });
+  return await AuthService.logout(request, {
+    redirectTo: "/sign-in"
+  });
 };
