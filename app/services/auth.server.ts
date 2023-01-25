@@ -1,38 +1,105 @@
-import UserClient from "~/models/User";
 import { getUserByCredentials } from "~/repositories/user";
-import SessionStorageService from "./session.server";
-import { Authenticator, AuthorizationError } from 'remix-auth';
-import { FormStrategy } from 'remix-auth-form';
+import SessionStorageService from "~/sessions";
 import validateInput from "~/utils/validator";
+import { json, redirect, SessionStorage } from "@remix-run/node";
+import { Authenticator, AuthorizationError } from "remix-auth";
+import { FormStrategy } from "remix-auth-form";
+import { User } from "~/models";
 
-const AuthService = new Authenticator<UserClient | Error | null>(SessionStorageService, {
-  sessionKey: "__clientSession",
-  sessionErrorKey: "__clientSessionError",
-});
+class AuthService {
+  private sessionStorage: SessionStorage;
+  sessionKey: string;
+  sessionErrorKey: string;
 
-AuthService.use(
-  new FormStrategy(async ({ form }) => {
+  constructor() {
+    this.sessionStorage = SessionStorageService;
+    this.sessionKey = "sessionDataClient";
+    this.sessionErrorKey = "sessionDataClient";
+  }
+
+  async authenticate(request: Request) {
+    const session = await this.sessionStorage.getSession(request.headers.get("Cookie"));
+    const form = await request.formData();
+
     const email = form.get('email') as string;
     const password = form.get('password') as string;
+
     const validationScope = "Bad Credentials";
 
-    const emailValidation = validateInput("Email", email, ["isString", "isRequired"], validationScope)
+    const emailValidation = validateInput("Email", email, ["isRequired"], validationScope)
 
-    if (!emailValidation.isValid)
-      throw new AuthorizationError(emailValidation.message)
+    if (!emailValidation.isValid) {
+      session.flash(this.sessionErrorKey, emailValidation.message);
 
-    const passwordValidation = validateInput("Password", password, ["isString", "isRequired"], validationScope)
+      return redirect("/sign-in", {
+        headers: {
+          "Set-Cookie": await this.sessionStorage.commitSession(session),
+        },
+      });
+    }
 
-    if (!passwordValidation.isValid)
-      throw new AuthorizationError(passwordValidation.message)
+    const passwordValidation = validateInput("Password", password, ["isRequired"], validationScope)
+
+    if (!passwordValidation.isValid) {
+      session.flash(this.sessionErrorKey, passwordValidation.message);
+
+      return redirect("/sign-in", {
+        headers: {
+          "Set-Cookie": await this.sessionStorage.commitSession(session),
+        },
+      });
+    }
 
     const { success: credentialsSuccess, data: user, message } = await getUserByCredentials({ email, password });
 
-    if (!credentialsSuccess)
-      throw new AuthorizationError(message);
+    if (!credentialsSuccess) {
+      session.flash(this.sessionErrorKey, message);
 
-    return user;
-  }),
-);
+      return redirect("/sign-in", {
+        headers: {
+          "Set-Cookie": await this.sessionStorage.commitSession(session),
+        },
+      });
+    }
 
-export default AuthService;
+    session.set(this.sessionKey, user);
+
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": await this.sessionStorage.commitSession(session),
+      },
+    });
+  }
+
+  async isAuthenticated(request: Request) {
+    const session = await this.sessionStorage.getSession(
+      request.headers.get("Cookie")
+    );
+
+    if (session.has(this.sessionKey)) {
+      return redirect("/");
+    }
+
+    const data = { error: session.get(this.sessionErrorKey) };
+
+    return json(data, {
+      headers: {
+        "Set-Cookie": await this.sessionStorage.commitSession(session),
+      },
+    });
+  }
+
+  async logOut(request: Request) {
+    const session = await this.sessionStorage.getSession(
+      request.headers.get("Cookie")
+    );
+
+    return redirect("/sign-in", {
+      headers: {
+        "Set-Cookie": await this.sessionStorage.destroySession(session),
+      },
+    });
+  }
+}
+
+export default new AuthService();
