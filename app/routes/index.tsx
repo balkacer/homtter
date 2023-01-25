@@ -18,23 +18,7 @@ export default function Index() {
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await AuthService.isAuthenticated(request);
-
-  const session = await sessionStorage.getSession(
-    request.headers.get("Cookie")
-  );
-
-  if (session.has(AuthService.sessionKey)) {
-    return json(session.get(AuthService.sessionKey))
-  }
-
-  const data = { error: session.get(AuthService.sessionErrorKey) };
-
-  return json(data, {
-    headers: {
-      "Set-Cookie": await sessionStorage.commitSession(session),
-    },
-  });
+  return await AuthService.isAuthenticated(request);
 };
 
 export const action: ActionFunction = async ({ request }) => {
