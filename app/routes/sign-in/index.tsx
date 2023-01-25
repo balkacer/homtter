@@ -22,8 +22,6 @@ export default function SignIn() {
 
       setNotifications(prev => [...prev, newNotification])
     }
-
-    console.log(notifications);
   }, [loaderData?.error?.message])
 
   const removeNotification = (id: string) => {
@@ -79,12 +77,9 @@ export const loader: LoaderFunction = async ({ request }) => {
   await AuthService.isAuthenticated(request, {
     successRedirect: "/dashboard"
   });
-
+  
   const session = await sessionStorage.getSession(request.headers.get("Cookie"))
-
   const error = session.get(AuthService.sessionErrorKey);
-
-  console.log(error);
 
   return json({ error })
 };
