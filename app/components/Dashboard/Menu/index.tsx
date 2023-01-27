@@ -1,40 +1,43 @@
+import { NavLink } from "@remix-run/react"
+import ROUTES, { CURRENT_DOMAIN } from "~/mocks/dashboardRoutes"
 
+const Menu = (props: { currentRoute: string }) => {
+  const { currentRoute } = props;
 
-const Menu = () => {
   return (
     <aside className="menu p-4">
-      <p className="menu-label">
-        General
-      </p>
-      <ul className="menu-list">
-        <li><a>Dashboard</a></li>
-        <li><a>Customers</a></li>
-      </ul>
-      <p className="menu-label">
-        Administration
-      </p>
-      <ul className="menu-list">
-        <li><a>Team Settings</a></li>
-        <li>
-          <a>Manage Your Team</a>
-          <ul>
-            <li><a>Members</a></li>
-            <li><a>Plugins</a></li>
-            <li><a>Add a member</a></li>
-          </ul>
-        </li>
-        <li><a>Invitations</a></li>
-        <li><a>Cloud Storage Environment Settings</a></li>
-        <li><a>Authentication</a></li>
-      </ul>
-      <p className="menu-label">
-        Transactions
-      </p>
-      <ul className="menu-list">
-        <li><a>Payments</a></li>
-        <li><a>Transfers</a></li>
-        <li><a>Balance</a></li>
-      </ul>
+      {ROUTES.map((item) => (
+        <>
+          {!item.to && (
+            <>
+              <p className="menu-label">
+                {item.name}
+              </p>
+              {item.children && (
+                <ul className="menu-list">
+                  {item.children.map(child => {
+                    return (<li key={child.to}>
+                      <NavLink to={child.to} className={({ isActive }) => isActive ? "is-active" : undefined}>
+                        {child.name}
+                      </NavLink>
+                      {!!child.children && (
+                        <ul className="menu-list">
+                          {child.children?.map(childOfChild => {
+                            return (<li key={childOfChild.to}>
+                              <NavLink to={childOfChild.to} className={({ isActive }) => isActive ? "is-active" : undefined}>
+                                {childOfChild.name}
+                              </NavLink>
+                            </li>)
+                          })}
+                        </ul>)}
+                    </li>)
+                  })}
+                </ul>
+              )}
+            </>
+          )}
+        </>
+      ))}
     </aside>
   )
 }
