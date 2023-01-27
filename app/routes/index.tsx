@@ -1,19 +1,18 @@
-import { ActionFunction, json, LoaderFunction } from "@remix-run/node";
+import { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import AuthService from "~/services/auth.server";
 import Navbar from "~/components/Navbar";
-import sessionStorage from "~/sessions";
 
 export default function Index() {
   const loggedUser = useLoaderData();
 
   return (
-    <>
+    <main className="has-navbar-fixed-top" style={{ height: "100vh", paddingTop: 64 }}>
       <Navbar loggedUser={loggedUser} />
-      <main>
-        <h1>Esta es la página de inicio</h1>
+      <main className="hero">
+
       </main>
-    </>
+    </main>
   );
 }
 
