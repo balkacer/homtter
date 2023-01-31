@@ -1,4 +1,10 @@
-const ROUTES = [
+type Route = {
+  name: string;
+  to: string | null;
+  children: Route[] | null;
+}
+
+const ROUTES: Route[] = [
   {
     name: "General",
     to: null,
@@ -21,26 +27,26 @@ const ROUTES = [
     children: [
       {
         name: "Team Settings",
-        to: "/dashboard/admin/team-settings",
+        to: "/dashboard/team-settings",
         children: null
       },
       {
         name: "Manage Your Team",
-        to: "/dashboard/admin/team-management",
+        to: "/dashboard/team-management",
         children: [
           {
             name: "Members",
-            to: "/dashboard/admin/team-management/members",
+            to: "/dashboard/team-management/members",
             children: null
           },
           {
             name: "Plugins",
-            to: "/dashboard/admin/team-management/pugins",
+            to: "/dashboard/team-management/pugins",
             children: null
           },
           {
             name: "Add a member",
-            to: "/dashboard/admin/team-management/add-member",
+            to: "/dashboard/team-management/add-member",
             children: null
           },
         ]
@@ -48,7 +54,5 @@ const ROUTES = [
     ]
   }
 ]
-
-export const CURRENT_DOMAIN = "http://localhost:3000/"
 
 export default ROUTES;

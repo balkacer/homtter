@@ -1,15 +1,14 @@
-import { NavLink } from "@remix-run/react";
-import ROUTES, { CURRENT_DOMAIN } from "~/mocks/dashboardRoutes";
+import { NavLink, useLocation } from "@remix-run/react";
+import ROUTES from "~/mocks/dashboardRoutes";
 import recursiveSearch from "~/utils/recursiveSearch";
-
-const Breadcrumb = (props: { currentRoute: string }) => {
-  const { currentRoute } = props;
+const Breadcrumb = () => {
+  const path = useLocation().pathname
 
   return (
     <nav className="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
       <ul>
         {
-          currentRoute.replace(CURRENT_DOMAIN, "").split("/").map((route, i, array) => {
+          path.replace("/", "").split("/").map((_, i, array) => {
             const routePath = "/" + array.filter((_, index) => index <= i).join("/");
 
             const routeName = ROUTES.reduce((value, current) => {
@@ -18,11 +17,11 @@ const Breadcrumb = (props: { currentRoute: string }) => {
               return result;
             }, "");
 
-            const isActive = routePath === currentRoute.replace(CURRENT_DOMAIN, "/")
+            const isActive = routePath === path;
 
             return (
               <li key={routePath} className={isActive ? "is-active" : undefined}>
-                <NavLink to={routePath} aria-current={isActive ? "page" : undefined}>
+                <NavLink to={routePath} aria-current={isActive ? "page" : undefined} end>
                   {routeName}
                 </NavLink>
               </li>
